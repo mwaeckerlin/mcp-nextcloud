@@ -1,7 +1,7 @@
 {
   "name": "@mwaeckerlin/mcp-nextcloud",
   "version": "1.0.0",
-  "description": "MCP server for Nextcloud API integration",
+  "description": "MCP server for Nextcloud API integration — transparent auth proxy",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -17,7 +17,6 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "axios": "^1.7.0",
-    "fast-xml-parser": "^4.4.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {

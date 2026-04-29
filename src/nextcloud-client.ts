@@ -1,142 +1,69 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { Config } from './config.js';
 
+export interface ProxyResponse {
+  status: number;
+  headers: Record<string, string>;
+  body: string;
+}
+
 export class NextcloudClient {
   private http: AxiosInstance;
-  private config: Config;
+  readonly username: string;
+  readonly baseUrl: string;
 
   constructor(config: Config) {
-    this.config = config;
+    this.username = config.username;
+    this.baseUrl = config.url;
     this.http = axios.create({
       baseURL: config.url,
       auth: {
         username: config.username,
         password: config.password,
       },
-      headers: {
-        'Accept': 'application/json',
-      },
+      // Don't throw on non-2xx so we can pass the status back to the caller
+      validateStatus: () => true,
     });
   }
 
-  async webdavRequest(
+  async request(
     method: string,
     path: string,
-    data?: string | Buffer,
+    body?: string,
     headers?: Record<string, string>,
-    responseType: 'text' | 'arraybuffer' = 'text'
-  ): Promise<{ data: string | ArrayBuffer; status: number; headers: Record<string, string> }> {
+    responseEncoding: 'text' | 'base64' = 'text'
+  ): Promise<ProxyResponse> {
     try {
-      const response = await this.http.request({
-        method,
-        url: `/remote.php/dav/files/${this.config.username}${path}`,
-        data,
-        headers: {
-          'Content-Type': 'application/xml',
-          ...headers,
-        },
-        responseType,
+      const response = await this.http.request<Buffer>({
+        method: method.toUpperCase(),
+        url: path,
+        data: body,
+        headers: headers ?? {},
+        responseType: 'arraybuffer',
       });
-      return { data: response.data, status: response.status, headers: response.headers as Record<string, string> };
+
+      const buf = Buffer.from(response.data);
+      const bodyOut =
+        responseEncoding === 'base64'
+          ? buf.toString('base64')
+          : buf.toString('utf8');
+
+      const responseHeaders: Record<string, string> = {};
+      for (const [k, v] of Object.entries(response.headers)) {
+        if (typeof v === 'string') responseHeaders[k] = v;
+        else if (Array.isArray(v)) responseHeaders[k] = v.join(', ');
+      }
+
+      return { status: response.status, headers: responseHeaders, body: bodyOut };
     } catch (err) {
-      throw this.handleError(err);
+      if (err instanceof AxiosError) {
+        const msg = err.response
+          ? `HTTP ${err.response.status} ${err.response.statusText}`
+          : err.message;
+        throw new Error(msg);
+      }
+      throw err instanceof Error ? err : new Error(String(err));
     }
-  }
-
-  async ocsRequest(
-    method: string,
-    path: string,
-    params?: Record<string, string | number | boolean>,
-    data?: Record<string, string | number | boolean | string[]>
-  ): Promise<unknown> {
-    try {
-      const response = await this.http.request({
-        method,
-        url: `/ocs/v2.php/${path}`,
-        params: { format: 'json', ...params },
-        data,
-        headers: {
-          'OCS-APIREQUEST': 'true',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
-      return response.data?.ocs?.data;
-    } catch (err) {
-      throw this.handleError(err);
-    }
-  }
-
-  async caldavRequest(
-    method: string,
-    path: string,
-    data?: string,
-    headers?: Record<string, string>
-  ): Promise<{ data: string; status: number }> {
-    try {
-      const response = await this.http.request({
-        method,
-        url: `/remote.php/dav/calendars/${this.config.username}${path}`,
-        data,
-        headers: {
-          'Content-Type': 'application/xml',
-          ...headers,
-        },
-        responseType: 'text',
-      });
-      return { data: response.data, status: response.status };
-    } catch (err) {
-      throw this.handleError(err);
-    }
-  }
-
-  async carddavRequest(
-    method: string,
-    path: string,
-    data?: string,
-    headers?: Record<string, string>
-  ): Promise<{ data: string; status: number }> {
-    try {
-      const response = await this.http.request({
-        method,
-        url: `/remote.php/dav/addressbooks/users/${this.config.username}${path}`,
-        data,
-        headers: {
-          'Content-Type': 'application/xml',
-          ...headers,
-        },
-        responseType: 'text',
-      });
-      return { data: response.data, status: response.status };
-    } catch (err) {
-      throw this.handleError(err);
-    }
-  }
-
-  get username(): string {
-    return this.config.username;
-  }
-
-  get baseUrl(): string {
-    return this.config.url;
-  }
-
-  private truncate(s: string, max = 200): string {
-    return s.length > max ? s.substring(0, max) + '... (truncated)' : s;
-  }
-
-  private handleError(err: unknown): Error {
-    if (err instanceof AxiosError) {
-      const status = err.response?.status;
-      const statusText = err.response?.statusText;
-      const message = err.response?.data
-        ? typeof err.response.data === 'string'
-          ? this.truncate(err.response.data)
-          : this.truncate(JSON.stringify(err.response.data))
-        : err.message;
-      return new Error(`HTTP ${status} ${statusText}: ${message}`);
-    }
-    if (err instanceof Error) return err;
-    return new Error(String(err));
   }
 }
 
