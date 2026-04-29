@@ -128,7 +128,7 @@ export const filesTools = [
       const normalizedPath = args.path.startsWith('/') ? args.path : `/${args.path}`;
       const encoding = args.encoding || 'utf8';
       const data = encoding === 'base64'
-        ? Buffer.from(args.content, 'base64').toString('binary')
+        ? Buffer.from(args.content, 'base64')
         : args.content;
       await client.webdavRequest('PUT', normalizedPath, data, { 'Content-Type': 'application/octet-stream' });
       return { success: true, message: `File uploaded to ${normalizedPath}` };

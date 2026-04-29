@@ -22,7 +22,7 @@ export class NextcloudClient {
   async webdavRequest(
     method: string,
     path: string,
-    data?: string,
+    data?: string | Buffer,
     headers?: Record<string, string>,
     responseType: 'text' | 'arraybuffer' = 'text'
   ): Promise<{ data: string | ArrayBuffer; status: number; headers: Record<string, string> }> {
@@ -126,8 +126,8 @@ export class NextcloudClient {
       const statusText = err.response?.statusText;
       const message = err.response?.data
         ? typeof err.response.data === 'string'
-          ? err.response.data.substring(0, 200)
-          : JSON.stringify(err.response.data).substring(0, 200)
+          ? err.response.data.substring(0, 200) + (err.response.data.length > 200 ? '... (truncated)' : '')
+          : (() => { const s = JSON.stringify(err.response.data); return s.substring(0, 200) + (s.length > 200 ? '... (truncated)' : ''); })()
         : err.message;
       return new Error(`HTTP ${status} ${statusText}: ${message}`);
     }
