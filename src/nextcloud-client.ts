@@ -120,14 +120,18 @@ export class NextcloudClient {
     return this.config.url;
   }
 
+  private truncate(s: string, max = 200): string {
+    return s.length > max ? s.substring(0, max) + '... (truncated)' : s;
+  }
+
   private handleError(err: unknown): Error {
     if (err instanceof AxiosError) {
       const status = err.response?.status;
       const statusText = err.response?.statusText;
       const message = err.response?.data
         ? typeof err.response.data === 'string'
-          ? err.response.data.substring(0, 200) + (err.response.data.length > 200 ? '... (truncated)' : '')
-          : (() => { const s = JSON.stringify(err.response.data); return s.substring(0, 200) + (s.length > 200 ? '... (truncated)' : ''); })()
+          ? this.truncate(err.response.data)
+          : this.truncate(JSON.stringify(err.response.data))
         : err.message;
       return new Error(`HTTP ${status} ${statusText}: ${message}`);
     }

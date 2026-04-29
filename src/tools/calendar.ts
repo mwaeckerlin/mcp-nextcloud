@@ -13,7 +13,7 @@ function formatICalDate(isoString: string, allDay: boolean = false): string {
   if (allDay) {
     return date.toISOString().replace(/-/g, '').substring(0, 8);
   }
-  return date.toISOString().replace(/[-:]/g, '').replace('.000', '');
+  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 }
 
 import { randomUUID } from 'crypto';
