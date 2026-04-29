@@ -6,10 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "build:docker": "docker compose build",
-    "test": "tsx --test src/nextcloud-client.test.ts src/server.test.ts",
-    "start": "docker compose up --build --force-recreate --remove-orphans",
-    "start:daemon": "docker compose up -d --build --force-recreate --remove-orphans",
+    "test": "tsx --test src/commands.test.ts src/disabled-tools.test.ts src/nextcloud-api-client.test.ts src/nextcloud-operations.test.ts src/server.test.ts src/tool-families.test.ts src/tools.test.ts src/validation.test.ts",
     "dev": "tsx src/server.ts"
   },
   "repository": {
@@ -29,8 +26,7 @@
   },
   "homepage": "https://github.com/mwaeckerlin/mcp-nextcloud#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "axios": "^1.7.0"
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
