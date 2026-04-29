@@ -1,0 +1,36 @@
+{
+  "name": "@mwaeckerlin/mcp-nextcloud",
+  "version": "1.0.0",
+  "description": "Standalone secure MCP Nextcloud server with server-side authentication.",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsx --test src/commands.test.ts src/disabled-tools.test.ts src/nextcloud-api-client.test.ts src/nextcloud-operations.test.ts src/server.test.ts src/tool-families.test.ts src/tools.test.ts src/validation.test.ts",
+    "dev": "tsx src/server.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mwaeckerlin/mcp-nextcloud.git"
+  },
+  "keywords": [
+    "mcp",
+    "nextcloud",
+    "security",
+    "typescript"
+  ],
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/mwaeckerlin/mcp-nextcloud/issues"
+  },
+  "homepage": "https://github.com/mwaeckerlin/mcp-nextcloud#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.5.0"
+  }
+}

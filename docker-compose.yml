@@ -1,0 +1,10 @@
+services:
+  mcp-nextcloud:
+    build:
+      context: .
+    environment:
+      NEXTCLOUD_URL:
+      NEXTCLOUD_USERNAME:
+      NEXTCLOUD_TOKEN:
+    ports:
+      - "4000:4000"
