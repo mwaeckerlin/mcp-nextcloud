@@ -24,8 +24,8 @@ function buildVCard(params: {
   let vcard = `BEGIN:VCARD\r\nVERSION:3.0\r\n`;
   vcard += `UID:${params.uid}\r\n`;
   vcard += `FN:${params.name}\r\n`;
-  const nameParts = params.name.split(' ');
-  const lastName = nameParts.pop() || '';
+  const nameParts = params.name.trim().split(/\s+/);
+  const lastName = nameParts.length > 1 ? (nameParts.pop() || '') : '';
   const firstName = nameParts.join(' ');
   vcard += `N:${lastName};${firstName};;;\r\n`;
   if (params.email) vcard += `EMAIL:${params.email}\r\n`;
