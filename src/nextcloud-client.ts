@@ -1,5 +1,5 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import type { Config } from './config.js';
+import axios, { AxiosInstance, isAxiosError } from "axios";
+import type { NextcloudConfig } from "./config.js";
 
 export interface ProxyResponse {
   status: number;
@@ -7,22 +7,29 @@ export interface ProxyResponse {
   body: string;
 }
 
+export function normalizeNextcloudError(error: unknown): Error {
+  if (isAxiosError(error)) {
+    const msg = error.response ? `HTTP ${error.response.status} ${error.response.statusText}` : error.message;
+    return new Error(msg);
+  }
+  return error instanceof Error ? error : new Error(String(error));
+}
+
 export class NextcloudClient {
-  private http: AxiosInstance;
+  private readonly http: AxiosInstance;
   readonly username: string;
   readonly baseUrl: string;
 
-  constructor(config: Config) {
+  constructor(config: NextcloudConfig) {
     this.username = config.username;
     this.baseUrl = config.url;
     this.http = axios.create({
       baseURL: config.url,
       auth: {
         username: config.username,
-        password: config.password,
+        password: config.token
       },
-      // Don't throw on non-2xx so we can pass the status back to the caller
-      validateStatus: () => true,
+      validateStatus: () => true
     });
   }
 
@@ -31,7 +38,7 @@ export class NextcloudClient {
     path: string,
     body?: string,
     headers?: Record<string, string>,
-    responseEncoding: 'text' | 'base64' = 'text'
+    responseEncoding: "text" | "base64" = "text"
   ): Promise<ProxyResponse> {
     try {
       const response = await this.http.request<Buffer>({
@@ -39,34 +46,27 @@ export class NextcloudClient {
         url: path,
         data: body,
         headers: headers ?? {},
-        responseType: 'arraybuffer',
+        responseType: "arraybuffer"
       });
 
       const buf = Buffer.from(response.data);
-      const bodyOut =
-        responseEncoding === 'base64'
-          ? buf.toString('base64')
-          : buf.toString('utf8');
+      const bodyOut = responseEncoding === "base64" ? buf.toString("base64") : buf.toString("utf8");
 
       const responseHeaders: Record<string, string> = {};
       for (const [k, v] of Object.entries(response.headers)) {
-        if (typeof v === 'string') responseHeaders[k] = v;
-        else if (Array.isArray(v)) responseHeaders[k] = v.join(', ');
+        if (typeof v === "string") responseHeaders[k] = v;
+        else if (Array.isArray(v)) responseHeaders[k] = v.join(", ");
       }
 
       return { status: response.status, headers: responseHeaders, body: bodyOut };
     } catch (err) {
-      if (err instanceof AxiosError) {
-        const msg = err.response
-          ? `HTTP ${err.response.status} ${err.response.statusText}`
-          : err.message;
-        throw new Error(msg);
-      }
-      throw err instanceof Error ? err : new Error(String(err));
+      throw normalizeNextcloudError(err);
     }
   }
 }
 
-export function createClient(config: Config): NextcloudClient {
+export function createClient(config: NextcloudConfig): NextcloudClient {
   return new NextcloudClient(config);
 }
+
+export const __testing = { normalizeNextcloudError };

@@ -10,7 +10,7 @@ AI client  ──(tool call)──▶  mcp-nextcloud  ──(+ Basic Auth)──
                      credentials stored here only
 ```
 
-The server exposes a single tool, `nextcloud_request`, plus a read-only resource `nextcloud://info` (base URL + username).  
+The server exposes a single tool, `nextcloud_request`.
 The caller builds the path and payload; the server injects the Nextcloud credentials and forwards the request 1:1.
 
 ## Quick start
@@ -21,7 +21,19 @@ The caller builds the path and payload; the server injects the Nextcloud credent
 |---|---|---|
 | `NEXTCLOUD_URL` | ✅ | Your Nextcloud base URL, e.g. `https://cloud.example.com` |
 | `NEXTCLOUD_USERNAME` | ✅ | Nextcloud username |
-| `NEXTCLOUD_PASSWORD` | ✅ | Nextcloud password or [App Password](#authentication) |
+| `NEXTCLOUD_TOKEN` | ✅ | Nextcloud [App Password](#authentication) token |
+| `MCP_NEXTCLOUD_HOST` | — | Listen host (default `127.0.0.1`) |
+| `MCP_NEXTCLOUD_PORT` | — | Listen port (default `4000`) |
+| `MCP_AUTH_TOKEN` | — | Bearer token required by MCP clients (optional) |
+
+### Run with Docker Compose
+
+```bash
+NEXTCLOUD_URL=https://cloud.example.com \
+NEXTCLOUD_USERNAME=alice \
+NEXTCLOUD_TOKEN=xxxx-xxxx-xxxx-xxxx \
+docker compose up --build
+```
 
 ### Run with Node.js
 
@@ -30,8 +42,8 @@ npm install
 npm run build
 NEXTCLOUD_URL=https://cloud.example.com \
 NEXTCLOUD_USERNAME=alice \
-NEXTCLOUD_PASSWORD=xxxx-xxxx-xxxx-xxxx \
-node dist/index.js
+NEXTCLOUD_TOKEN=xxxx-xxxx-xxxx-xxxx \
+node dist/server.js
 ```
 
 ### Run with Docker
@@ -41,35 +53,18 @@ docker build -t mcp-nextcloud .
 docker run --rm \
   -e NEXTCLOUD_URL=https://cloud.example.com \
   -e NEXTCLOUD_USERNAME=alice \
-  -e NEXTCLOUD_PASSWORD=xxxx-xxxx-xxxx-xxxx \
+  -e NEXTCLOUD_TOKEN=xxxx-xxxx-xxxx-xxxx \
+  -p 4000:4000 \
   mcp-nextcloud
-```
-
-### Claude Desktop (`claude_desktop_config.json`)
-
-```json
-{
-  "mcpServers": {
-    "nextcloud": {
-      "command": "node",
-      "args": ["/path/to/mcp-nextcloud/dist/index.js"],
-      "env": {
-        "NEXTCLOUD_URL": "https://cloud.example.com",
-        "NEXTCLOUD_USERNAME": "alice",
-        "NEXTCLOUD_PASSWORD": "xxxx-xxxx-xxxx-xxxx"
-      }
-    }
-  }
-}
 ```
 
 ## Authentication
 
-Nextcloud App Passwords are recommended over your main password.
+Nextcloud App Passwords are the recommended (and only supported) authentication method.
 
 1. Log in to Nextcloud → **Settings → Security → App passwords**
 2. Enter a name (e.g. `mcp-agent`) and click **Generate new app password**
-3. Copy the generated token and use it as `NEXTCLOUD_PASSWORD`
+3. Copy the generated token and use it as `NEXTCLOUD_TOKEN`
 
 ## Tool reference
 
@@ -95,12 +90,6 @@ Make an authenticated HTTP request to Nextcloud and return the response.
 }
 ```
 
-## Resource
-
-### `nextcloud://info`
-
-Returns the Nextcloud base URL, the authenticated username, and a cheat-sheet of common path prefixes — **no credentials**.
-
 ## Common path prefixes
 
 | API | Path prefix |
@@ -116,8 +105,7 @@ OCS calls require the query string `?format=json` and the header `OCS-APIREQUEST
 
 ```bash
 npm install
-npm run lint    # TypeScript type-check
 npm test        # Unit tests
 npm run build   # Compile to dist/
+npm run dev     # Run directly with tsx (requires env vars)
 ```
-
